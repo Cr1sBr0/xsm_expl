@@ -1,0 +1,3 @@
+write(E)     //shoud check type of E
+read(id)      // should check that id type and input type match
+begin and end

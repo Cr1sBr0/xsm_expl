@@ -1,0 +1,33 @@
+class
+	c1{
+		decl
+			int a;
+			int b;
+			int f1(int k);
+		enddecl
+		int f1(int k){
+			decl
+				int he;
+			enddecl
+			begin
+				self.a=99;
+				self.b=self.f1(he);
+				write("helo");
+				return 0;
+			end
+		
+		}
+	}
+endclass
+decl
+	c1 cris;
+enddecl
+int main(){
+	decl
+		int a;
+	enddecl
+	begin
+		cris=new(c1);
+		a=cris.f1();		
+	end
+}

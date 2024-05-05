@@ -1,0 +1,18 @@
+Syntax : val / v <virtual_address>
+Semantics : Displays the content at memory address.
+eg: v 4096
+
+in jmp instructions, the exact address is given, not the register
+ JNZ R0,2074
+ 
+ 
+in read sys call,push the memory address like this
+MOV R2,4096           
+ PUSH R2
+ and not like PUSH 4096
+ 
+ 
+U CANT PUSH [R1]
+ONLY PUSH R1
+CANT add [r1]...
+only add registers

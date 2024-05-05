@@ -1,0 +1,18 @@
+ Since OExpL is designed for pedegogical purposes, the following restrictions are imposed to simplify implementation.
+
+    The member fields of a class may be of type integer, string, user defined types, previously defined classes or of the same class. Thus the language supports both Composition and Inheritance.
+    Member fields of a class are private to the class in the sense that they can be accessed only by the methods defined in the class. The language does not permit access modifiers like public or protected.
+    Class variables can be declared only globally. Class variables cannot be arguments to functions; a function cannot have a class as its return type and class variables cannot occur as local variables within functions.
+    All the member fields and methods should be declared between decl and enddecl.
+    In methods defined within a class, the special keyword self refers to the instance of the class through which the method was invoked. ( The usage is similar in spirit to this in C++. )
+    The methods defined in a class may have parameters as well as local variables. The syntax and semantics rules are similar to other ExpL functions. However, there are some important differences:
+
+    a) Methods of a class, apart from its arguments and local variables, have access only to the member fields of the corresponding class.
+    b) A method can invoke only functions of the same class or functions inherited from its parent class or methods of class variables occuring as member fields of the class. (Be aware of the fragile base class problem).
+
+To put in short
+
+    class variables can only be global.
+    Member functions of a class can access only its member fields, methods, local variables, arguments and methods of member fields.
+    Member fields of a class can be accessed from outside only through member functions of the class.
+

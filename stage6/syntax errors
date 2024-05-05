@@ -1,0 +1,18 @@
+AND defined as AND
+
+every function shud contain 
+decl
+enddecl
+&&
+begin
+end
+
+
+if
+endif;
+
+node1.left.right.data
+node1=[addr of node1]=123
+ath.left=value at (123+2)=[123+2]=234
+ath.right=[234+3]=777
+ath.data=[777+1]=4

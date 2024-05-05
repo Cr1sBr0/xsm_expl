@@ -1,0 +1,33 @@
+
+	class
+	A{
+	decl
+	int age;
+	int fact(int a);
+	enddecl
+	int fact(int a){
+	decl
+	enddecl
+	begin
+	if(a==1) then
+	return 1;
+	endif;
+	return a*self.fact(a-1);
+	end
+	}
+	
+	}
+	endclass
+	decl
+	A helo;
+	enddecl
+	int main(){
+	decl
+	enddecl
+	begin
+	helo.age=1;
+	return 0;
+	end
+	}
+
+

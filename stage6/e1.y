@@ -1,0 +1,374 @@
+%{
+
+	#include <stdlib.h>
+	#include <stdio.h>
+	#include "y.tab.h"
+
+	#include "type.c"
+	#include "symbol.c"	
+	#include "e1.c"
+	
+	int yylex(void);
+	FILE *fp;
+	extern FILE *yyin;
+	int l[20];
+	struct Typetable *gtype;
+	int params=0;
+	int args;
+	int flabell=0;
+	struct Typetable* rettype;
+	struct FieldList *ftype;
+%}
+
+%union{
+	char character;
+	struct tNode *no;
+	int integer;        //1 INT 3 STR
+	char *string;
+	struct Paramstruct *par;
+	struct argList * al;
+	struct Typetable* tipe;
+}
+%type <no> program Slist Stmt InputStmt OutputStmt AsgStmt E IfStmt WhileStmt ContStmt BrkStmt FdefBlock Fdef RetStmt Field
+%type <al> ArgList
+//chumma
+%type <tipe> FieldDecl TypeName TypeName2
+%type <par> ParamList Param ParamList2 Param2
+%type <integer> NUM 
+%type <string> ID
+%token NUM BEGINN END READ WRITE ID IF ELSE THEN ENDIF WHILE ENDWHILE DO DECL ENDDECL INT STR CONTINUE BREAK STRING MAIN RETURN AND ALLOC FREE TYPE ENDTYPE NULLL
+%left '-' '+' 
+%left '*' '/'
+%%
+
+Final: Program                    {	printf("hi final23");
+					return;
+						}
+Program :TypeDefBlock GdeclBlock FdefBlock MainBlock{;}
+        | TypeDefBlock GdeclBlock MainBlock{;}
+        ;
+
+
+
+
+
+TypeDefBlock : TYPE TypeDefList ENDTYPE{printf("printing types\n");printTypes();
+								}
+	     |
+	     ;
+TypeDefList  : TypeDefList TypeDef
+	     | TypeDef
+	     ;
+TypeDef	     : ID '{' FieldDeclList '}' { printf("doing tinstall\n");TInstall($1,0,fieldHead);
+					  fieldHead=NULL;fIndex=0;     }
+		;
+FieldDeclList: FieldDeclList FieldDecl
+	     | FieldDecl
+	     ;
+FieldDecl    : TypeName ID ';'  {$$=addField($2,fIndex,$1);fIndex++;}
+		;
+		     
+	     
+	     
+GdeclBlock : DECL GdeclList ENDDECL {  //showTable();
+					initialize(fp,l);
+					printf("gdecl completed\n");
+					}
+		| 		{initialize(fp,l);}
+		;
+GdeclList : GdeclList GDecl {;}
+	  | GDecl{;}
+	  ;
+GDecl : TypeName GidList ';' {if($1->existyet==0){
+				yyerror("undeclared type");
+				exit(0);};
+				}
+	;
+
+GidList : GidList ',' Gid {;}
+	| Gid{;}
+	;
+
+Gid :      ID	{ 		if(Lookitup($1)==NULL)
+  				GInstall($1,gtype, 1,NULL);
+  				else{  					printf("%s",$1);
+  					yyerror("redecleration ");
+  					exit(1);
+  				};}
+        | ID'['NUM']'{         if(Lookitup($1)==NULL)
+  				GInstall($1,gtype, $3,NULL);
+  				else{  					printf("%s",$1);
+  					yyerror("redecleration ");
+  					exit(1);
+  				};
+  				}
+        | ID'('ParamList')'    {if(Lookitup($1)==NULL )
+  				GInstall($1,gtype, 0,$3);
+  				else{  					printf("%s",$1);
+  					yyerror("redecleration ");
+  					exit(1);
+  				};
+  				}
+	;
+ParamList : ParamList ',' Param{$$=addParam($1,$3);}
+	  | Param		{printf("not empty\n");$$=$1;}
+	  | 			{printf("empty\n");$$=NULL;}
+	  ;
+Param: TypeName2 ID{$$=createParam($2,$1,1);}
+	;	
+
+
+
+
+FdefBlock : FdefBlock Fdef {	
+				//printree($2);
+	  		showTable();
+	  		flabell++;
+	  		genCode($2,args,fp,l,flabell);
+	  		//then destroy the Lsymboltable for that fuunction
+			params=0;
+	  		ClearLsymbol();printf("FdefBlock completed1\n");}
+	  | Fdef{	printf("FdefBlock started1\n");
+			//generate code using Lsymbol table
+			showTable();
+	  		//printree($1);
+	  		flabell++;
+	  		genCode($1,args,fp,l,flabell);
+	  		//then destroy the Lsymboltable for that fuunction
+	  		params=0;
+	  		ClearLsymbol();
+	  		printf("FdefBlock completed1\n");fflush(stdout);
+	  			}
+	  ;		
+Fdef :TypeName ID '(' ParamList2')' '{' LdeclBlock BEGINN Slist END'}'{	if(rettype!=$1){
+									yyerror("rettype error");
+  									exit(1);		
+										}
+									printf("yofn\n");	
+									typecheck($1, Lookitup($2)->type, 'e');
+									checkParams($2,$4);
+									args=doBinding(params);
+									$$=$9;}
+     ;
+ParamList2 : ParamList2 ',' Param2 {$$=addParam($1,$3);}
+	  | Param2		{$$=$1;}
+	  | 			{$$=NULL;}
+	  ;
+Param2: TypeName2 ID{		if(Lookitup2($2)==NULL)
+  				LInstall($2,$1);
+  				else{
+  					printf("%s",$2);
+  					yyerror("redecleration");
+  					exit(1);
+  				};
+  				params++;
+  				$$=createParam($2,$1,1);}
+	;	
+ TypeName2 :   INT {$$=TLookup("int");}
+ 	| STR {$$=TLookup("str");}
+ 	|ID	{$$=TLookup($1);}
+ 	;
+
+
+
+
+
+LdeclBlock : DECL LDecList ENDDECL {printf("hi3");}
+	   | DECL ENDDECL{;}
+	   |
+	   ;
+LDecList : LDecList LDecl {;}
+	 | LDecl{;}
+	 ;
+LDecl : TypeName IdList ';' {;}
+	;
+
+IdList : IdList ',' ID {	if(Lookitup2($3)==NULL)
+  				LInstall($3,gtype);
+  				else{	  printf("%s",$3);
+  					yyerror("redecleration");
+  					exit(1);
+  				};}
+       | ID{			if(Lookitup2($1)==NULL)
+  				LInstall($1,gtype);
+  				else{  		printf("%s",$1);
+  					yyerror("redecleration");
+  					exit(1);
+  				};;}
+       ;
+
+
+ E : 	   ID '(' Empty ')' {$$=getFunNode($1,NULL);}
+ 	| ID'('ArgList')'{checkArgs($1,$3);$$=getFunNode($1,$3);}
+ 	;
+Empty   :		{;}	
+	; 
+ArgList : ArgList ',' E {$$=getArgList1($1,$3);}
+	| E {$$=getArgList2($1);}
+	;
+MainBlock: MAIN '{' LdeclBlock BEGINN Slist END '}' {   
+			if(rettype!=TLookup("int")){
+							//printf("-%s-",rettype->name);
+									yyerror("rettype error");
+  									exit(1);		
+										}
+			args=doBinding(params);
+			//printree($5);
+	  		//showTable();
+	  		//then destroy the Lsymboltable for that fuunction
+	  		genCode($5,args,fp,l,0);
+	  		printf("finn\n");
+	  		ClearLsymbol();
+				//codegen($3,fp,l);
+				//exitt();
+				return;
+						}
+	| BEGINN END	{	return;		}
+	;
+
+ 	
+ TypeName :   INT {$$=TLookup("int");gtype=TLookup("int");}
+ 	| STR {$$=TLookup("str");gtype=TLookup("str");}
+ 	|ID	{$$=TLookup($1);gtype=TLookup($1);}
+ 	;
+ 
+  	  	          	    
+Slist: 	 Slist Stmt       {$$=getCNode($1,$2);}
+	| Stmt		  {$$=$1;}
+	;
+Stmt:    InputStmt       {$$=$1;		}
+	|OutputStmt	 {$$=$1;		}
+	|AsgStmt	 {$$=$1;		}
+	|IfStmt            {$$=$1;}
+	|WhileStmt 		{$$=$1;}
+	|BrkStmt           {$$ = $1;}
+    |ContStmt          {$$ = $1;}
+    |RetStmt		{$$ = $1;}
+    | FREE '('ID')' ';'  {getFreeNode(getIdNode($3,NULL));}                      //NEW
+    | FREE '('Field')'';'{getFreeNode($3);}
+	;
+RetStmt: RETURN E';'	{rettype=$2->type;$$=getRetNode($2);}
+WhileStmt:  WHILE '('E')' DO Slist ENDWHILE';'	{ typecheck($3->type, TLookup("bool"), 'i');
+						  $$=CreateTree(7,$3,NULL,$6);}
+	  ;	
+InputStmt     : READ'('ID')'';'	    {typecheck(getIdNode($3,NULL)->type,NULL,'y');$$=getrNode(getIdNode($3,NULL));}
+	      | READ'('ID'['E']'')'';'{	arraycheck($3,$5);
+							$$=getrNode(getIdNode($3,$5));}
+	      |READ '(' Field ')' ';' {typecheck($3->type,NULL,'y');
+	      		$$=getrNode(getIdNode($3,NULL));}				 //NEW
+	 ;
+OutputStmt: WRITE'('E')'';'     {typecheck($3->type, NULL, 'y'); 
+							$$=getwNode($3);}
+	  ;
+IfStmt:     IF '('E')' THEN Slist ELSE Slist ENDIF ';'{typecheck($3->type, TLookup("bool"), 'i'); 
+							$$=CreateTree(6,$3,$6,$8);}
+	   |IF '('E')' THEN Slist ENDIF';'{    typecheck($3->type, TLookup("bool"), 'i');
+	   					$$=CreateTree(6,$3,$6,NULL);}
+	    ;	  
+  
+
+AsgStmt   : ID '=' E ';'       {	//printf("type is%d\n",$3->type);
+					typecheck(getIdNode($<string>1,NULL)->type, $3->type, 'e');
+					$$=getOpNode(TLookup("void"),HI,getIdNode($<string>1,NULL),$3);}	
+	|	ID'['E']' '=' E ';'	{arraycheck($1,$3);
+					getOpNode(TLookup("void"),HI,getIdNode($1,$3),$6);}
+
+	|  Field'='E ';'	  {typecheck($1->type,$3->type,'e');
+				   $$=getOpNode(TLookup("void"),HI,$1,$3);              //NEW
+						}
+	| ID '=' ALLOC '('')'';'	{$$=getOpNode(TLookup("void"),HI,getIdNode($1,NULL),getAllocNode()); }					    //NEW
+	| Field '=' ALLOC '('')'';'	{$$=getOpNode(TLookup("void"),HI,$1,getAllocNode());}		
+	
+	
+	| ID '=' NULLL ';'	{$$=getOpNode(TLookup("void"),HI,getIdNode($1,NULL),getNulNode()); }					    //NEW
+	| Field '=' NULLL ';'	{printf("heyNULL\n");$$=getOpNode(TLookup("void"),HI,$1,getNulNode());}	
+	
+				    //NEW																																											
+	  ;
+BrkStmt: BREAK ';'                  {$$ =CreateTree(8,NULL,NULL,NULL);}
+
+ContStmt: CONTINUE ';'                  {$$ =CreateTree(9,NULL,NULL,NULL);}	
+
+Field    : ID '.' ID       {if(ftype=FLookup(getIdNode($1,NULL)->type,$3)){
+				$$=getFieldNode($1,ftype->fieldIndex);
+				$$->type=ftype->type;
+				}
+			    else{
+			    		yyerror("invalid member");
+			    		exit(0);
+			    }
+			    		}
+			                              //NEW
+	 | Field '.' ID    {if(ftype=FLookup($1->type,$3)){
+				$$=addMember($1,ftype->fieldIndex);
+				$$->type=ftype->type;
+				}
+			    else{
+			    		yyerror("invalid member");
+			    		exit(0);
+			    }	
+			    } 
+	  ;
+E	: E '+' E	    {printf("hoho\n");typecheck($1->type, $3->type, 'a');
+				$$=getOpNode(TLookup("int"),PLUS,$1,$3);}            //1ath 2bool 3string
+	| E '-' E	    { typecheck($1->type, $3->type, 'a');
+				$$=getOpNode(TLookup("int"),MINUS,$1,$3);}
+	| E '*' E	    { typecheck($1->type, $3->type, 'a');
+				$$=getOpNode(TLookup("int"),MUL,$1,$3);}
+	| E '/' E	    { typecheck($1->type, $3->type, 'a');
+				$$=getOpNode(TLookup("int"),DIV,$1,$3);}
+	| E '%' E	    { typecheck($1->type, $3->type, 'a');
+				$$=getOpNode(TLookup("int"),MOD,$1,$3);}			
+	| '(' E ')' 	    {$$=$2;	}
+	| NUM		    {$<no>$=getNumNode($<integer>1);}
+	| ID		    {$<no>$=getIdNode($<string>1,NULL);}
+	| STRING	    {$<no>$=getStringNode($<string>1); }
+	| Field                {$$=$1;}                                      //NEW
+	| ID'['E']'		{arraycheck($1,$3);$$=getIdNode($<string>1,$3);}
+	|  E '>' E           {typecheck($1->type, $3->type, 'r');
+				$$=getOpNode(TLookup("bool"),GT,$1,$3);}
+	| E '<' E    	    {typecheck($1->type, $3->type, 'r');
+				$$=getOpNode(TLookup("bool"),LT,$1,$3);}
+	| E '=''=' E 	    {typecheck($1->type, $4->type, 'r');
+				$$=getOpNode(TLookup("bool"),EQ,$1,$4);}
+	| E '<''=' E 	    {typecheck($1->type, $4->type, 'r');
+				$$=getOpNode(TLookup("bool"),LTE,$1,$4);}
+	| E '>''=' E 	    {typecheck($1->type, $4->type, 'r');
+				$$=getOpNode(TLookup("bool"),GTE,$1,$4);}
+	| E '!''=' E 	    {typecheck($1->type, $4->type, 'r');
+				$$=getOpNode(TLookup("bool"),NE,$1,$4);}
+	| E AND E 	    {typecheck($1->type, $3->type, 'b'); //AND HAS b
+				$$=getOpNode(TLookup("bool"),12,$1,$3);}	
+	| E '!''=' NULLL	  {$$=getOpNode(TLookup("bool"),NE,$1,getNulNode());}
+	| E '=''=' NULLL	  {$$=getOpNode(TLookup("bool"),EQ,$1,getNulNode());}					
+	;
+     
+%%
+
+void yyerror(char const *s)
+{
+    printf("yyerror  %s\n",s);
+    return ;
+}
+int main()
+{
+	FILE *fp2 = fopen("input.txt", "r");
+	if(fp2){
+		yyin = fp2;
+		}
+	
+    fp = fopen("a.xsm", "w");
+    printf("HELLO OPENED\n");	
+    // Check if the file is opened successfully
+    if (fp == NULL) {
+        fprintf(stderr, "Error opening the file.\n");
+        return 1;  // Exit the program with an error code
+    }
+
+    // Use fprintf to write to the file
+  TypeTableCreate();  
+  fprintf(fp,"MOV R0,\"Heapset\"\nPUSH R0\nPUSH R0\nPUSH R0\nPUSH R0\nPUSH R0\nCALL 0\n");
+	fprintf(fp,"POP R0\nPOP R0\nPOP R0\nPOP R0\nPOP R0\n");
+  yyparse();
+  return 1;
+}     

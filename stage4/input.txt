@@ -1,0 +1,15 @@
+begin
+decl
+	int v;
+enddecl
+		
+		if([v]==-1) then
+			a=-1;
+		else
+			a=[v];
+			b=[a]
+			[v]=b;
+		endif;
+		return a;
+
+end

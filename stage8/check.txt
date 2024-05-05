@@ -1,0 +1,1 @@
+same name members and member funcs error

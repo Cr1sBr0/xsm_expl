@@ -1,0 +1,24 @@
+ 0
+ 2056
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+  BRKP
+ MOV R0,10
+ MOV R1,200
+ MOV R2,30
+ MOV R3,R0
+ LT R0,R1
+ MOV R4,2074
+ JNZ R0,2074
+ MOV R1,R3
+ MOV R3,R1                
+ LT R1,R2
+ MOV R4,2084
+ JNZ R1,2084
+ MOV R2,R3
+ MOV R5,4096
+ MOV [R5],R2                           

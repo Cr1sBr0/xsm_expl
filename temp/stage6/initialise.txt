@@ -1,0 +1,49 @@
+MOV R0,1024
+MOV R1,1032
+C1:
+MOV R2,R0
+MOV R3,2040
+LT R2,R3
+JZ R2,A2
+MOV [R0],R1
+ADD R0,8
+ADD R1,8
+JMP C1
+C2:
+MOV [R0],-1
+RET
+
+
+
+//alloc()
+MOV R0,1024
+MOV R1,[R0]
+MOV R2,-1                   //r3 is k
+EQ R1,R2
+JZ R1,A1
+
+MOV R3,-1
+JMP A2
+
+C1:
+MOV R3,[R0]
+MOV [R0],[R3]
+
+C2:
+MOV R4,SP
+MOV R5,-1
+ADD R4,R5
+MOV [R4],R3
+
+RET
+
+
+//free()
+MOV R0,SP
+MOV R1,4
+SUB R0,R1          //x at r1
+MOV R1,[R0]
+MOV R0,1028
+MOV [R1],[R0]
+MOV [R0],R1
+RET

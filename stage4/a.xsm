@@ -1,0 +1,19 @@
+MOV R0,1024
+MOV R1,[R0]
+MOV R2,-1                   //r3 is k
+EQ R1,R2
+JZ R1,A1
+
+MOV R3,-1
+JMP A2
+
+C1:
+MOV R3,[R0]
+MOV [R0],[R3]
+
+C2:
+MOV R4,SP
+ADD R4.-2
+MOV [R4],R3
+
+RET

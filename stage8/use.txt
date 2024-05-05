@@ -1,0 +1,19 @@
+Program :TypeDefBlock ClassDefBlock GdeclBlock FdefBlock MainBlock{;}
+        | TypeDefBlock ClassDefBlock GdeclBlock MainBlock{;}
+        ;
+
+
+return type error
+
+begin and end for everything
+
+
+{if(ftype=FLookup($1->type,$3)){
+				$$=addMember($1,ftype->fieldIndex);
+				$$->type=ftype->type;
+				}
+			    else{
+			    		yyerror("invalid member");
+			    		exit(0);
+			    }	
+			    }
